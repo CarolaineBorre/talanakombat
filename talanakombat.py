@@ -13,26 +13,40 @@ AZUL = (0,0,255)
 VERDE = (0,255,0)
 AMARILLO = (255,255,0)
 VENTANA = pygame.display.set_mode((ANCHO,ALTO))
+
+JUGADOR_1_TAMAÑO = 150
+JUGADOR_1_ESCALE = 4
+JUGADOR_1_OFFSET = [350, 400]
+JUGADOR_1_DATOS = [JUGADOR_1_TAMAÑO,JUGADOR_1_ESCALE,JUGADOR_1_OFFSET]
+JUGADOR_2_TAMAÑO = 200
+JUGADOR_2_ESCALE = 3
+JUGADOR_2_OFFSET = [250, 550]
+JUGADOR_2_DATOS = [JUGADOR_2_TAMAÑO,JUGADOR_2_ESCALE,JUGADOR_2_OFFSET]
+
 #cargar imagenes
 BACKGROUND = pygame.image.load("assets/imagenes/background/background.jpg")
 HOJA_PLAYER_1 = pygame.image.load("assets/imagenes/Huntress/Sprites/Attack.png")
-HOJA_PLAYER_2 = pygame.image.load("assets/imagenes/background/background.jpg")
+HOJA_PLAYER_2 = pygame.image.load("assets/imagenes/Martial Hero/Sprites/Attack.png")
+
+#numero de pasos de la animacion
+PASOS_PLAYER_1 = [5,5,7,8,2,8,2,8,3]
+PASOS_PLAYER_2 = [6,6,6,2,8,2,8,4,4]
 
 class Kombat:
     def __init__(self) -> None:
         super().__init__()
         pygame.init()
-        pygame.display.set_caption("JUEGO DE NAVES")
+        pygame.display.set_caption("KOMBAT")
         clock = pygame.time.Clock()
 
         #Tonyn Stallone
         jugador_1 = pygame.sprite.Group()
-        player_1 = Jugador(300,500)
+        player_1 = Jugador(1,300,500,False,JUGADOR_1_DATOS,HOJA_PLAYER_1,PASOS_PLAYER_1)
         jugador_1.add(player_1)
 
         #Arnaldor Shuatseneguer
         jugador_2 = pygame.sprite.Group()
-        player_2 = Jugador(700,500)
+        player_2 = Jugador(2,700,500,True,JUGADOR_2_DATOS,HOJA_PLAYER_2,PASOS_PLAYER_2)
         jugador_2.add(player_2)
 
         jugando = True
@@ -43,7 +57,7 @@ class Kombat:
             self.barra(player_2.salud,580,20)
 
             jugador_1.update(player_2)
-            # jugador_2.update()
+            # jugador_2.update(player_1)
 
             jugador_1.draw(VENTANA)
             jugador_2.draw(VENTANA)
@@ -70,25 +84,58 @@ class Kombat:
         pygame.draw.rect(VENTANA,AMARILLO,(x,y,400 * ratio,30))
     
 class Jugador(pygame.sprite.Sprite):
-    def __init__(self,x,y):
+    def __init__(self,player,x,y,flip,data,sprite_sheet,animation_steps):
         super().__init__()
+        self.player = player
+        self.size = data[0]
+        self.image_scale = data[1]
+        self.offset = data[2]
+        self.flip = False
+        
+        self.animation_list = self.cargar_imagenes(sprite_sheet, animation_steps)
+        self.action = 0
+        self.frame_index = 0
+        self.image = self.animation_list[self.action][self.frame_index]
+        self.rect = pygame.Rect((x,y,self.offset[0],self.offset[1]))
+        # img = pygame.transform.flip(self.image, self.flip, False)
+        self.rect.center = (x, y)
         #variable saltar
         self.saltar = False
         self.atacar = False
         self.tipo_ataque = 0
         self.salud = 6
-        self.limite = False
-        # self.limitex = self.rect.x
-
-        #ubicacion nuevo personaje
-        self.image = pygame.Surface((80,180))
-        self.image.fill(VERDE)
-        self.rect = self.image.get_rect()
-        self.rect.center = (x , y)
+        # VENTANA.blit(self.image, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
+       
+        # self.image = pygame.Surface((80,180))
+        # self.image.fill(VERDE)
+        # self.rect = pygame.Rect((x,y,80,180))
+        # img = pygame.transform.flip(self.image, self.flip, False)
+        # VENTANA.blit(img, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
+        # self.rect.center = (x, y)
 
         #velocidad inicial (quieto)
         self.velocidad_x = 0
         self.velocidad_y = 0
+
+
+    def cargar_imagenes(self,sprite_sheet,animation_steps):
+        animation_list = []
+        for y, animation in enumerate(animation_steps):
+            temp_img_list = []
+            for x in range(animation):
+                temp_img = sprite_sheet.subsurface(x * self.size, y * self.size, self.size , self.size)
+                temp_img_list.append(pygame.transform.scale(temp_img, (self.size * self.image_scale, self.size * self.image_scale)))
+            animation_list.append(temp_img_list)
+        return animation_list
+    
+    # def draw(self):
+    #     #ubicacion nuevo personaje
+    #     pygame.draw.rect(VENTANA, VERDE, self.rect)
+    #     VENTANA.blit(self.image, (self.rect.x, self.rect.y))
+        
+    def draw(self, surface):
+        img = pygame.transform.flip(self.image, self.flip, False)
+        VENTANA.blit(img, (self.rect.x - (self.offset[0] * self.image_scale), self.rect.y - (self.offset[1] * self.image_scale)))
 
     def update(self,enemigo):
         #velocidad predeterminada
